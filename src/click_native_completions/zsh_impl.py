@@ -87,7 +87,7 @@ class ZshCompleter(Completer):
             for flag in flags:
                 yield f'"{excludes}{flag}{helptext}{argspec}"'
 
-    def _all_option_descs(self, ctx: click.Context) -> t.Iterable[str]:
+    def _all_option_descs(self, ctx: click.Context) -> t.List[str]:
         options = [
             x
             for x in ctx.command.params
@@ -95,10 +95,23 @@ class ZshCompleter(Completer):
         ]
         return [x for o in options for x in self._option_descs(o)]
 
+    def _positional_arg_desc(self, arg_position: int, arg: click.Argument) -> str:
+        n = str(arg_position + 1)
+        if compute_nargs(arg) == -1:
+            n = "*"
+        # a zsh positional arg spec uses a double-colon before the message field to
+        # indicate optional positional arguments
+        opt_colon = "" if arg.required else ":"
+        return f'"{n}{opt_colon}:{arg.human_readable_name}: "'
+
+    def _all_positional_arg_descs(self, ctx: click.Context) -> t.List[str]:
+        args = [x for x in ctx.command.params if isinstance(x, click.Argument)]
+        return [self._positional_arg_desc(i, a) for i, a in enumerate(args)]
+
     def cmd_completer(self, ctx: click.Context) -> t.Generator[str, None, None]:
         yield f"{self._cmd_completer_name(ctx)}() {{"
         yield "  _arguments \\"
-        all_descs = list(self._all_option_descs(ctx))
+        all_descs = self._all_option_descs(ctx) + self._all_positional_arg_descs(ctx)
         for d in all_descs[:-1]:
             yield f"    {d}  \\"
         yield "    " + all_descs[-1]

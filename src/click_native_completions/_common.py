@@ -93,11 +93,11 @@ def is_repeatable(o: click.Option) -> bool:
     return o.count or o.multiple
 
 
-def compute_nargs(o: click.Option) -> int:
-    if o.is_flag or o.count:
-        return 0
-    else:
-        return o.nargs
+def compute_nargs(p: click.Parameter) -> int:
+    if isinstance(p, click.Option):
+        if p.is_flag or p.count:
+            return 0
+    return p.nargs
 
 
 def opt_strs(o: click.Option) -> t.List[str]:
